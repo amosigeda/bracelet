@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wtwd.gms.dao.impl.WtDeviceDaoImpl" >
+  <resultMap id="BaseResultMap" type="com.wtwd.gms.entity.WtDevice" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="dev_name" property="devName" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, dev_name
+  </sql>
+   <sql id="Wt_Device">wt_device</sql>
+  <!-- 查询所有数据 -->
+	<select id="queryDataInfo" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from <include refid="Wt_Device" />
+	</select>
+  <select id="queryDeviceByDeviceName" resultMap="BaseResultMap" parameterType="string">
+ 		 select
+		<include refid="Base_Column_List" />
+		from <include refid="Wt_Device" />
+		<where>
+			dev_name=#{devName,jdbcType=VARCHAR}
+		</where>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from wt_device
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from wt_device
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.wtwd.gms.entity.WtDevice" >
+    insert into wt_device (id, dev_name)
+    values (#{id,jdbcType=BIGINT}, #{devName,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.wtwd.gms.entity.WtDevice" >
+    insert into wt_device
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="devName != null" >
+        dev_name,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="devName != null" >
+        #{devName,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.wtwd.gms.entity.WtDevice" >
+    update wt_device
+    <set >
+      <if test="devName != null" >
+        dev_name = #{devName,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.wtwd.gms.entity.WtDevice" >
+    update wt_device
+    set dev_name = #{devName,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wtwd.gms.dao.impl.WtDepartmentDaoImpl" >
+  <resultMap id="BaseResultMap" type="com.wtwd.gms.entity.WtDepartmentInfo" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="depart_name" property="departName" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    id, depart_name
+  </sql>
+  <sql id="Wt_Department_Info">wt_department</sql>
+  <!-- 查询所有数据 -->
+	<select id="queryDataInfo" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from <include refid="Wt_Department_Info" />
+	</select>
+  <select id="queryDepartmentByDepartName" resultMap="BaseResultMap" parameterType="string">
+  	select <include refid="Base_Column_List"/>
+  	from <include refid="Wt_Department_Info"/>
+  	<where>
+  		depart_name=#{departName,jdbcType=VARCHAR}
+  	</where>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from wt_department
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from wt_department
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.wtwd.gms.entity.WtDepartmentInfo" >
+    insert into wt_department (id, depart_name)
+    values (#{id,jdbcType=BIGINT}, #{departName,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.wtwd.gms.entity.WtDepartmentInfo" >
+    insert into wt_department
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="departName != null" >
+        depart_name,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="departName != null" >
+        #{departName,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.wtwd.gms.entity.WtDepartmentInfo" >
+    update wt_department
+    <set >
+      <if test="departName != null" >
+        depart_name = #{departName,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.wtwd.gms.entity.WtDepartmentInfo" >
+    update wt_department
+    set depart_name = #{departName,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>

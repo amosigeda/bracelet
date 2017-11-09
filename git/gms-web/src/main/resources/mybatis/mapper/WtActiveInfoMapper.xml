@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.wtwd.gms.dao.impl.WtActiveInfoDaoImpl">
+	<resultMap id="BaseResultMap" type="com.wtwd.gms.entity.WtActiveInfo">
+		<id column="id" property="id" jdbcType="BIGINT" />
+		<result column="sn" property="sn" jdbcType="VARCHAR" />
+		<result column="dev_name" property="devName" jdbcType="VARCHAR" />
+		<result column="active_time" property="activeTime" jdbcType="TIMESTAMP" />
+		<result column="country" property="country" jdbcType="VARCHAR" />
+		<result column="mobile_op" property="mobileOp" jdbcType="VARCHAR" />
+		<result column="mobile_model" property="mobileModel" jdbcType="VARCHAR" />
+		<result column="mobile_brand" property="mobileBrand" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, sn, dev_name, active_time, country, mobile_op, mobile_model,
+		mobile_brand
+	</sql>
+
+	<sql id="Wt_Active_Info">wt_active_info</sql>
+	<!-- 查询所有数据 -->
+	<select id="queryDataInfo" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from
+		<include refid="Wt_Active_Info" />
+	</select>
+	<select id="getCountryMapData" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT country ,COUNT(1) AS count FROM wt_active_info
+		<where>
+			<!-- DATE_SUB(CURDATE(), INTERVAL #{date} DAY) <![CDATA[<=]]> active_time
+			and 
+			<foreach collection="devList" item="item" index="index" open="(" separator="or" close=")">  
+			   dev_name= #{item}  
+			</foreach> -->
+			<include refid="getCountryMapData_condition"></include>
+		</where>
+		GROUP BY country  
+		ORDER BY count DESC  
+	</select>
+	<sql id="getCountryMapData_condition">
+		<if test="date != null and date !=''">
+			 	
+		</if>
+		<if test="BegainDate != null and BegainDate != '' and EndDate != null and EndDate != '' ">
+			and active_time between CONCAT(#{BegainDate},' 00:00:00') and
+			CONCAT(#{EndDate},' 23:59:59')
+		</if>
+		<if test="devList != null and devList.size > 0">
+			and 
+			<foreach collection="devList" item="item" index="index" open="(" separator="or" close=")">  
+			   dev_name= #{item}  
+			</foreach>
+		</if>
+	</sql>
+	
+	<select id="queryActiveCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+		select count(1) as count from wt_active_info 
+		<where>
+			<include refid="condition_sql"/>
+		</where>
+	</select>
+	<!-- 根据搜索条件获取数据 -->
+	<sql id="condition_sql">
+		<if test="active_time != null and active_time != '' ">
+			and active_time between CONCAT(#{active_time},' 00:00:00') and
+			CONCAT(#{active_time},' 23:59:59')
+		</if>
+		<if test="yesTodayDate != null and yesTodayDate != '' ">
+			and active_time between CONCAT(#{yesTodayDate},'
+			00:00:00') and CONCAT(#{yesTodayDate},' 23:59:59')
+		</if>
+		<if
+			test="weekBegainDate != null and weekBegainDate != '' and weekEndDate != null and weekEndDate != '' ">
+			and active_time between CONCAT(#{weekBegainDate},' 00:00:00') and
+			CONCAT(#{weekEndDate},' 23:59:59')
+		</if>
+		<if test="allDate != null and allDate != ''">
+			1=1
+		</if>
+		<if test="devName !=null and devName != '' ">
+			and dev_name=#{devName}
+		</if>
+		<if test="countryName !=null and countryName !='' ">
+			and country=#{countryName}
+		</if>
+		<if test="devList != null and devList.size > 0">
+			and 
+			<foreach collection="devList" item="item" index="index" open="(" separator="or" close=")">  
+			   dev_name= #{item.model}  
+			</foreach>
+		</if>
+		<if
+			test="BegainDate != null and BegainDate != '' and EndDate != null and EndDate != '' ">
+			and active_time between CONCAT(#{BegainDate},' 00:00:00') and
+			CONCAT(#{EndDate},' 23:59:59')
+		</if>
+	</sql>
+	<select id="countActiveCountryNum" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		select distinct
+		country,count(1) as count from wt_active_info
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		group by country
+		order by count desc
+		limit 5
+	</select>
+	<select id="countActiveDeviceNum" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		select distinct
+		dev_name,count(1) as count from wt_active_info
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		group by dev_name
+		order by count desc
+		limit 5
+	</select>
+	<select id="listBy" resultMap="BaseResultMap" parameterType="java.util.Map">
+		select
+		<include refid="Base_Column_List" />
+		from
+		<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="condition_sql" />
+		</where>
+	</select>
+	<!-- 操作系统活跃查询 -->
+	<!-- <sql id="os_active_sql">
+		<if test="type != null and type != ''  and type == 'OS'.toString()">
+			<if test="date != 0"> AND DATE_SUB(CURDATE(), INTERVAL 7 DAY) <![CDATA[<=]]> 
+				active_time </if>
+			<if test="mobile_op != null and mobile_op !='' ">
+				AND mobile_op = #{mobile_op}
+			</if>
+		</if>
+		<if test="type != null and type != ''  and type == 'Brand'.toString()">
+			<if test="date != null and date != ''  ">
+				AND DATE_SUB(CURDATE(), INTERVAL #{date} DAY) <![CDATA[<=]]>
+				active_time
+			</if>
+			<if test="mobile_op != null and mobile_op !='' ">
+				AND brand = #{brand}
+			</if>
+		</if>
+	</sql>
+	<sql id="os_active_limit_sql">
+		<if test="date > 0 ">
+			LIMIT #{date}
+		</if>
+	</sql> -->
+	<select id="countActiveDate" resultType="com.wtwd.gms.entity.WtDeviceDateCount"
+		parameterType="java.util.Map">
+		SELECT
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+		<include refid="Wt_Active_Info" />
+		<where>
+			AND DATE_SUB(CURDATE(), INTERVAL 7 DAY) <![CDATA[<=]]>
+			active_time
+			AND mobile_op = #{mobile_op,jdbcType=VARCHAR}
+		</where>
+		GROUP BY
+		DATE(active_time)
+		ORDER BY count DESC
+		LIMIT 7
+	</select>
+	
+
+	<!-- <select id="countDeviceActive" resultType="com.wtwd.gms.entity.WtBaseCount"> -->
+	
+	
+	<!-- 无拼接sql语句 -->
+	<select id="countActiveAndroid" resultType="com.wtwd.gms.entity.WtDeviceDateCount">
+		SELECT
+
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+		wt_active_info
+		WHERE
+		DATE_SUB(CURDATE(), INTERVAL 7 DAY) <![CDATA[<=]]>
+		active_time
+		AND mobile_op = 'Android '
+		GROUP BY
+		DATE(active_time)
+		ORDER BY count DESC
+		LIMIT 7
+	</select>
+	<select id="countOs" resultType="com.wtwd.gms.entity.WtDeviceDateCount" parameterType="java.util.Map">
+		SELECT
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+		<include refid="Wt_Active_Info"/>
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		GROUP BY
+		DATE(active_time)
+		ORDER BY date DESC
+	</select>
+	<!-- 计算N天活跃的TOP5设备名称 -->
+	<select id="countActiveDeviceName" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		<!-- SELECT dev_name, count( * ) AS count
+		FROM wt_active_info
+		where DATE_SUB(CURDATE(), INTERVAL 7 DAY) <![CDATA[<=]]>
+		active_time
+		GROUP BY dev_name
+		ORDER BY count DESC
+		LIMIT 5 -->
+		SELECT dev_name, count(1) AS count
+		FROM <include refid="Wt_Active_Info"/>
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		GROUP BY dev_name
+		ORDER BY count DESC
+		<include refid="countActiveDate_limit"/>
+	</select>
+	<sql id="countActiveDate_condition">
+		<if test="date != null and date != '' and date >0">
+			and DATE_SUB(CURDATE(), INTERVAL #{date} DAY) <![CDATA[<=]]> active_time	
+		</if>
+		<if test="countryName != null and countryName !=''">
+			and country =#{countryName}
+		</if>
+		<if test="devModel != null and devModel !=''">
+			and dev_name =#{devModel}
+		</if>
+		<if test="mobile_op != null and mobile_op !='' ">
+			and mobile_op =#{mobile_op}
+		</if>
+		<if test="mobile_brand != null and mobile_brand !=''">
+			and mobile_brand=#{mobile_brand}
+		</if>
+		<if test="mobile_model !=null and mobile_model !=''">
+			and mobile_model = #{mobile_model}
+		</if>
+		<if test="devList != null and devList.size > 0">
+			and 
+			<foreach collection="devList" item="item" index="index" open="(" separator="or" close=")">  
+			   dev_name= #{item.model}  
+			</foreach>
+		</if>
+		<if test="weekBegainDate != null and weekBegainDate != '' and weekEndDate != null and weekEndDate != '' ">
+			and active_time between CONCAT(#{weekBegainDate},' 00:00:00') and
+			CONCAT(#{weekEndDate},' 23:59:59')
+		</if>
+		<if test="BegainDate != null and BegainDate != '' and EndDate != null and EndDate != '' ">
+			and active_time between CONCAT(#{BegainDate},' 00:00:00') and
+			CONCAT(#{EndDate},' 23:59:59')
+		</if>
+	</sql>
+	<sql id="countActiveDate_limit">
+		<if test="limit !=null and limit !='' and limit > 0 ">
+			LIMIT #{limit}
+		</if>
+	</sql>
+	<!-- <sql id="countActive_countryName">
+		
+	</sql> -->
+	<!-- 计算N天每天活跃的TOP5设备名称 -->
+	<select id="countActiveDeviceEveryDay" resultType="com.wtwd.gms.entity.WtDeviceDateCount" parameterType="java.util.Map">
+		SELECT
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+		<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveDeviceEveryDay_sql"/>
+		</where>
+		GROUP BY
+		DATE(active_time)
+		ORDER BY date DESC
+	</select>
+	<sql id="countActiveDeviceEveryDay_sql">
+		<if test="devName != null and devName != '' ">
+			AND dev_name = #{devName}
+		</if>
+		<if test ="date != null and date != '' and date > 0 ">
+			AND DATE_SUB(CURDATE(), INTERVAL #{date} DAY) <![CDATA[<=]]> active_time
+		</if>
+		<if test="countryName != null and countryName != '' ">
+			AND country=#{countryName}
+		</if>
+		<if test="devList != null and devList.size > 0 ">
+			and 
+			<foreach collection="devList" item="item" index="index" open="(" separator="or" close=")">  
+			   dev_name= #{item.model}  
+			</foreach>
+		</if>
+		<if test="BegainDate != null and BegainDate != '' and EndDate != null and EndDate != '' ">
+			and active_time between CONCAT(#{BegainDate},' 00:00:00') and
+			CONCAT(#{EndDate},' 23:59:59')
+		</if>
+	</sql>
+	
+	<!-- 计算N天活跃的国家名称 -->
+	<select id="countActiveCountryName" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT country ,count(1) AS count
+		FROM
+		<include refid="Wt_Active_Info"/>
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		GROUP BY country
+		ORDER BY count DESC
+		<include refid="countActiveDate_limit"/>
+	</select>
+	<!--  -->
+	<select id="countActiveCountryEveryDay" resultType="com.wtwd.gms.entity.WtDeviceDateCount" parameterType="java.util.Map">
+		SELECT
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+		<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveCountryEveryDay_sql"/>
+		</where>
+		GROUP BY
+		DATE(active_time)
+		ORDER BY date DESC
+	</select>
+	<sql id="countActiveCountryEveryDay_sql">
+		<if test="countryName != null and countryName != '' ">
+			AND country = #{countryName}
+		</if>
+		<if test ="date != null and date != '' and date > 0 ">
+			AND DATE_SUB(CURDATE(), INTERVAL #{date} DAY) <![CDATA[<=]]> active_time
+		</if>
+		<if test="devName != null and devName != '' ">
+			AND dev_name = #{devName}
+		</if>
+		<if test="BegainDate != null and BegainDate != '' and EndDate != null and EndDate != '' ">
+			and active_time between CONCAT(#{BegainDate},' 00:00:00') and
+			CONCAT(#{EndDate},' 23:59:59')
+		</if>
+	</sql>
+	<!--  -->
+	<select id="countBrandName" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT mobile_brand, count(1) AS count  
+		FROM <include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveCountryEveryDay_sql"/>
+		</where> 
+		GROUP BY mobile_brand  
+		ORDER BY count DESC  
+		<include refid="countActiveDate_limit"/> 
+	</select>
+	<select id="countBrandEveryDay" resultType="com.wtwd.gms.entity.WtDeviceDateCount" parameterType="java.util.Map">
+		SELECT
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+		<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where> 
+		GROUP BY
+			DATE(active_time)
+		ORDER BY date DESC 
+	</select>
+	<!--  -->
+	<select id="countModelName" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT mobile_model, count(1) AS count  
+		FROM <include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where> 
+		GROUP BY mobile_model  
+		ORDER BY count DESC  
+		<include refid="countActiveDate_limit"/> 
+	</select>
+	<select id="countModelEveryDay" resultType="com.wtwd.gms.entity.WtDeviceDateCount" parameterType="java.util.Map">
+		SELECT
+		DATE(active_time) AS date,
+		count(1) AS count
+		FROM
+			<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where> 
+		GROUP BY
+			DATE(active_time)
+		ORDER BY date DESC  
+	</select>
+	
+	<!--  -->
+	<select id="countActiveNum" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT
+		*
+		FROM
+			<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where> 
+	</select>
+	<select id="countActiveNumber" resultType="java.lang.Integer" parameterType="java.util.Map">
+		select count(1) as count
+		from wt_active_info
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where> 
+	</select>
+	<!-- distinct -->
+	<select id="distinctData" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT distinct
+			<include refid="distinctData_sql"/>
+		FROM
+			<include refid="Wt_Active_Info" />
+		<where>
+			<include refid="countActiveDeviceEveryDay_sql"/>
+		</where>
+	</select>
+	<sql id="distinctData_sql">
+		<if test="mobile_op != null and mobile_op !='' ">
+			 mobile_op 
+		</if>
+		<if test="mobile_brand != null and mobile_brand !=''">
+			 mobile_brand
+		</if>
+		<if test="mobile_model !=null and mobile_model !=''">
+			 mobile_model 
+		</if>
+		<if test="country != null and country !=''">
+			country
+		</if>
+	</sql>
+	<select id="queryDevSn" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT sn, dev_name,count(1) AS count  
+		FROM wt_active_info
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		GROUP BY sn 
+		ORDER BY count DESC  
+	</select>
+	<select id="queryDevName" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		SELECT  dev_name,count(1) AS count  
+		FROM wt_active_info
+		<where>
+			<include refid="countActiveDate_condition"/>
+		</where>
+		GROUP BY dev_name 
+		ORDER BY count DESC  
+	</select>
+	<!--  -->
+	<select id="timeTrend" resultType="com.wtwd.gms.entity.WtBaseCount" parameterType="java.util.Map">
+		 SELECT HOUR(e.active_time) as Hour,count(1) as Count 
+	    FROM wt_active_info e 
+	    <where>
+	    	<include refid="timeTrend_condition"/>
+	    </where>
+	    GROUP BY HOUR(e.active_time) ORDER BY Hour(e.active_time);
+	</select>
+	<sql id="timeTrend_condition">
+		<if test="activeTime != null and activeTime != ''">
+		and DATE_FORMAT(e.active_time,'%Y-%m-%d') = #{activeTime} 
+		</if>
+		<if test="devName != null and devName.size > 0">
+			and 
+			<foreach collection="devName" item="item" index="index" open="(" separator="or" close=")">  
+			   dev_name= #{item}  
+			</foreach>
+		</if>
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.Long">
+		select
+		<include refid="Base_Column_List" />
+		from wt_active_info
+		where id = #{id,jdbcType=BIGINT}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+		delete from wt_active_info
+		where id = #{id,jdbcType=BIGINT}
+	</delete>
+	<insert id="insert" parameterType="com.wtwd.gms.entity.WtActiveInfo">
+		insert into wt_active_info (id, sn, dev_name,
+		active_time, country, mobile_op,
+		mobile_model, mobile_brand)
+		values (#{id,jdbcType=BIGINT}, #{sn,jdbcType=VARCHAR},
+		#{devName,jdbcType=VARCHAR},
+		#{activeTime,jdbcType=TIMESTAMP}, #{country,jdbcType=VARCHAR}, #{mobileOp,jdbcType=VARCHAR},
+		#{mobileModel,jdbcType=VARCHAR}, #{mobileBrand,jdbcType=VARCHAR})
+	</insert>
+	<insert id="insertSelective" parameterType="com.wtwd.gms.entity.WtActiveInfo">
+		insert into wt_active_info
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="sn != null">
+				sn,
+			</if>
+			<if test="devName != null">
+				dev_name,
+			</if>
+			<if test="activeTime != null">
+				active_time,
+			</if>
+			<if test="country != null">
+				country,
+			</if>
+			<if test="mobileOp != null">
+				mobile_op,
+			</if>
+			<if test="mobileModel != null">
+				mobile_model,
+			</if>
+			<if test="mobileBrand != null">
+				mobile_brand,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=BIGINT},
+			</if>
+			<if test="sn != null">
+				#{sn,jdbcType=VARCHAR},
+			</if>
+			<if test="devName != null">
+				#{devName,jdbcType=VARCHAR},
+			</if>
+			<if test="activeTime != null">
+				#{activeTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="country != null">
+				#{country,jdbcType=VARCHAR},
+			</if>
+			<if test="mobileOp != null">
+				#{mobileOp,jdbcType=VARCHAR},
+			</if>
+			<if test="mobileModel != null">
+				#{mobileModel,jdbcType=VARCHAR},
+			</if>
+			<if test="mobileBrand != null">
+				#{mobileBrand,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.wtwd.gms.entity.WtActiveInfo">
+		update wt_active_info
+		<set>
+			<if test="sn != null">
+				sn = #{sn,jdbcType=VARCHAR},
+			</if>
+			<if test="devName != null">
+				dev_name = #{devName,jdbcType=VARCHAR},
+			</if>
+			<if test="activeTime != null">
+				active_time = #{activeTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="country != null">
+				country = #{country,jdbcType=VARCHAR},
+			</if>
+			<if test="mobileOp != null">
+				mobile_op = #{mobileOp,jdbcType=VARCHAR},
+			</if>
+			<if test="mobileModel != null">
+				mobile_model = #{mobileModel,jdbcType=VARCHAR},
+			</if>
+			<if test="mobileBrand != null">
+				mobile_brand = #{mobileBrand,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where id = #{id,jdbcType=BIGINT}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.wtwd.gms.entity.WtActiveInfo">
+		update wt_active_info
+		set sn = #{sn,jdbcType=VARCHAR},
+		dev_name = #{devName,jdbcType=VARCHAR},
+		active_time = #{activeTime,jdbcType=TIMESTAMP},
+		country = #{country,jdbcType=VARCHAR},
+		mobile_op = #{mobileOp,jdbcType=VARCHAR},
+		mobile_model = #{mobileModel,jdbcType=VARCHAR},
+		mobile_brand = #{mobileBrand,jdbcType=VARCHAR}
+		where id = #{id,jdbcType=BIGINT}
+	</update>
+</mapper>
